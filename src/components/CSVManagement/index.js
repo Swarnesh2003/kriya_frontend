@@ -1,6 +1,6 @@
 // src/components/CSVManagement/index.js
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, Routes, Route, useParams } from 'react-router-dom';
 import {
   Box, Typography, Container, Paper, Alert,
   Button, IconButton, Dialog, DialogTitle, DialogContent,
@@ -13,7 +13,7 @@ import axios from 'axios';
 // Set axios default base URL
 axios.defaults.baseURL = 'https://kriya-backend.onrender.com/';
 
-// API service for CSV operations using axios
+// API service for CSV operations
 const apiService = {
   getCSVFiles: async () => {
     try {
@@ -147,7 +147,34 @@ const CSVEditor = ({ csvId }) => {
   const [formData, setFormData] = useState({});
   const [csvName, setCsvName] = useState('');
 
-  const fetchData = async () => {
+  // Define handleDelete and handleEdit first, using useCallback
+  const handleDelete = useCallback(async (rowIndex) => {
+    try {
+      await apiService.deleteCSVRow(csvId, rowIndex);
+      // We'll call fetchData later after it's defined
+      setLoading(true); // Show loading state
+    } catch (err) {
+      setError(err.message);
+    }
+  }, [csvId]);
+
+  const handleEdit = useCallback((row, rowIndex) => {
+    setDialogMode('edit');
+    setEditRowIndex(rowIndex);
+    
+    // Initialize form with current values
+    const initialForm = {};
+    columns.forEach(col => {
+      if (col.field !== 'actions' && col.field !== 'id') {
+        initialForm[col.field] = row[col.field] || '';
+      }
+    });
+    setFormData(initialForm);
+    setOpenDialog(true);
+  }, [columns]);
+
+  // Now define fetchData with proper dependencies
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await apiService.getCSVData(csvId);
@@ -198,12 +225,19 @@ const CSVEditor = ({ csvId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [csvId, handleDelete, handleEdit]);
 
-  // Fixed useEffect dependency array to include fetchData
+  // Complete the handleDelete implementation now that fetchData is defined
+  useEffect(() => {
+    if (loading) {
+      fetchData();
+    }
+  }, [loading, fetchData]);
+
+  // Initial data fetch
   useEffect(() => {
     fetchData();
-  }, [csvId, fetchData]);
+  }, [fetchData]);
 
   const handleAdd = () => {
     setDialogMode('add');
@@ -216,31 +250,6 @@ const CSVEditor = ({ csvId }) => {
     });
     setFormData(initialForm);
     setOpenDialog(true);
-  };
-
-  const handleEdit = (row, rowIndex) => {
-    setDialogMode('edit');
-    setEditRowIndex(rowIndex);
-    
-    // Initialize form with current values
-    const initialForm = {};
-    columns.forEach(col => {
-      if (col.field !== 'actions' && col.field !== 'id') {
-        initialForm[col.field] = row[col.field] || '';
-      }
-    });
-    setFormData(initialForm);
-    setOpenDialog(true);
-  };
-
-  const handleDelete = async (rowIndex) => {
-    try {
-      await apiService.deleteCSVRow(csvId, rowIndex);
-      // Refresh data
-      fetchData();
-    } catch (err) {
-      setError(err.message);
-    }
   };
 
   const handleCloseDialog = () => {
@@ -264,7 +273,7 @@ const CSVEditor = ({ csvId }) => {
       
       // Close dialog and refresh data
       setOpenDialog(false);
-      fetchData();
+      setLoading(true); // Trigger data refresh
     } catch (err) {
       setError(err.message);
     }
@@ -296,7 +305,7 @@ const CSVEditor = ({ csvId }) => {
           pageSize={5}
           rowsPerPageOptions={[5, 10, 20]}
           disableSelectionOnClick
-          loading={loading}
+          loading={loading && data.length > 0}
         />
       </Paper>
       
@@ -319,7 +328,6 @@ const CSVEditor = ({ csvId }) => {
                 variant="outlined"
                 value={formData[col.field] || ''}
                 onChange={handleFormChange}
-                // Disable timestamp field for edits if it exists
                 disabled={col.field === 'timestamp' && dialogMode === 'edit'}
               />
             ))
@@ -338,6 +346,12 @@ const CSVEditor = ({ csvId }) => {
   );
 };
 
+// Proper CSVEditorWrapper using useParams hook
+const CSVEditorWrapper = () => {
+  const { csvId } = useParams();
+  return <CSVEditor csvId={csvId} />;
+};
+
 // Main CSV Management Component
 const CSVManagement = () => {
   return (
@@ -348,14 +362,6 @@ const CSVManagement = () => {
       </Routes>
     </Container>
   );
-};
-
-// Wrapper to get params from route
-const CSVEditorWrapper = () => {
-  const location = window.location.pathname;
-  const csvId = location.split('/').pop();
-  
-  return <CSVEditor csvId={csvId} />;
 };
 
 export default CSVManagement;
