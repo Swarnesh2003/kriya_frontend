@@ -51,6 +51,16 @@ function App() {
     isAdmin: false // Added admin state for admin panel access
   });
 
+  // Admin layout wrapper component
+  const AdminLayout = ({ children }) => (
+    <Box sx={{ display: 'flex' }}>
+      <AdminNav />
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        {children}
+      </Box>
+    </Box>
+  );
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
@@ -82,23 +92,29 @@ function App() {
           <Route 
             path="/admin" 
             element={
-              <Box sx={{ display: 'flex' }}>
-                <AdminNav />
-                <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                  <Navigate to="/admin/csv" />
-                </Box>
-              </Box>
+              <AdminLayout>
+                <Navigate to="/admin/csv" />
+              </AdminLayout>
             } 
           />
+          
+          {/* CSV Management route that handles both the list view and nested routes */}
           <Route 
-            path="/admin/csv/*" 
+            path="/admin/csv" 
             element={
-              <Box sx={{ display: 'flex' }}>
-                <AdminNav />
-                <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                  <CSVManagement />
-                </Box>
-              </Box>
+              <AdminLayout>
+                <CSVManagement />
+              </AdminLayout>
+            } 
+          />
+          
+          {/* Explicit route for direct access to CSV IDs */}
+          <Route 
+            path="/admin/csv/:csvId" 
+            element={
+              <AdminLayout>
+                <CSVManagement />
+              </AdminLayout>
             } 
           />
         </Routes>
