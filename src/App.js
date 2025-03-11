@@ -68,7 +68,7 @@ function App() {
         <Routes>
           {/* Original Routes */}
           <Route 
-            path="/" 
+            path="/abc" 
             element={<FirstStage setAuth={setAuth} />} 
           />
           <Route 
@@ -90,7 +90,7 @@ function App() {
           
           {/* Admin Routes */}
           <Route 
-            path="/admin" 
+            path="/" 
             element={
               <AdminLayout>
                 <Navigate to="/admin/csv" />
