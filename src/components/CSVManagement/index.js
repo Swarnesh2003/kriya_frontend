@@ -200,9 +200,10 @@ const CSVEditor = ({ csvId }) => {
     }
   };
 
+  // Fixed useEffect dependency array to include fetchData
   useEffect(() => {
     fetchData();
-  }, [csvId]);
+  }, [csvId, fetchData]);
 
   const handleAdd = () => {
     setDialogMode('add');
