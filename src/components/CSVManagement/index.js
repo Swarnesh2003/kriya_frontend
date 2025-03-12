@@ -1,4 +1,3 @@
-// src/components/CSVManagement/index.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
@@ -146,6 +145,7 @@ const CSVEditor = () => {
   const [dialogMode, setDialogMode] = useState('add'); // 'add' or 'edit'
   const [editRowIndex, setEditRowIndex] = useState(null);
   const [formData, setFormData] = useState({});
+  const [formErrors, setFormErrors] = useState({}); // Added for validation errors
   const [csvName, setCsvName] = useState('');
   const [dataFetched, setDataFetched] = useState(false);
 
@@ -171,6 +171,7 @@ const CSVEditor = () => {
       }
     });
     setFormData(initialForm);
+    setFormErrors({}); // Reset errors when opening edit dialog
     setOpenDialog(true);
   };
 
@@ -253,21 +254,59 @@ const CSVEditor = () => {
       }
     });
     setFormData(initialForm);
+    setFormErrors({}); // Reset errors when opening add dialog
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    setFormErrors({}); // Clear any error state when closing
   };
 
   const handleFormChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    // Clear error for this field as user is typing
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: null
+      });
+    }
+  };
+
+  // Validate form data
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    columns.forEach(col => {
+      if (col.field !== 'actions' && col.field !== 'id') {
+        // Skip validation for timestamp field in edit mode
+        if (!(col.field === 'timestamp' && dialogMode === 'edit')) {
+          // Check if field is empty
+          if (!formData[col.field] || formData[col.field].trim() === '') {
+            errors[col.field] = `${col.headerName} is required`;
+            isValid = false;
+          }
+        }
+      }
+    });
+
+    setFormErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async () => {
+    // Validate form before submission
+    if (!validateForm()) {
+      return; // Stop submission if validation fails
+    }
+
     try {
       if (dialogMode === 'add') {
         await apiService.addCSVRow(csvId, formData);
@@ -277,7 +316,7 @@ const CSVEditor = () => {
       
       // Close dialog and refresh data
       setOpenDialog(false);
-      fetchData(); // Directly call fetchData instead of setting loading to true
+      fetchData();
     } catch (err) {
       setError(err.message);
     }
@@ -334,6 +373,9 @@ const CSVEditor = () => {
                 value={formData[col.field] || ''}
                 onChange={handleFormChange}
                 disabled={col.field === 'timestamp' && dialogMode === 'edit'}
+                error={Boolean(formErrors[col.field])}
+                helperText={formErrors[col.field] || ''}
+                required={!(col.field === 'timestamp' && dialogMode === 'edit')}
               />
             ))
           }
