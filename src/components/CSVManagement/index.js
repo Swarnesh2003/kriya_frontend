@@ -1,6 +1,6 @@
 // src/components/CSVManagement/index.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Routes, Route, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Box, Typography, Container, Paper, Alert,
   Button, IconButton, Dialog, DialogTitle, DialogContent,
@@ -136,7 +136,8 @@ const CSVList = () => {
 };
 
 // CSV Editor Component
-const CSVEditor = ({ csvId }) => {
+const CSVEditor = () => {
+  const { csvId } = useParams();
   const [data, setData] = useState([]);
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,19 +147,19 @@ const CSVEditor = ({ csvId }) => {
   const [editRowIndex, setEditRowIndex] = useState(null);
   const [formData, setFormData] = useState({});
   const [csvName, setCsvName] = useState('');
+  const [dataFetched, setDataFetched] = useState(false);
 
-  // Define handleDelete and handleEdit first, using useCallback
-  const handleDelete = useCallback(async (rowIndex) => {
+  const handleDelete = async (rowIndex) => {
     try {
       await apiService.deleteCSVRow(csvId, rowIndex);
-      // We'll call fetchData later after it's defined
-      setLoading(true); // Show loading state
+      // Refresh data after deletion
+      fetchData();
     } catch (err) {
       setError(err.message);
     }
-  }, [csvId]);
+  };
 
-  const handleEdit = useCallback((row, rowIndex) => {
+  const handleEdit = (row, rowIndex) => {
     setDialogMode('edit');
     setEditRowIndex(rowIndex);
     
@@ -171,10 +172,11 @@ const CSVEditor = ({ csvId }) => {
     });
     setFormData(initialForm);
     setOpenDialog(true);
-  }, [columns]);
+  };
 
-  // Now define fetchData with proper dependencies
   const fetchData = useCallback(async () => {
+    if (!csvId) return;
+    
     try {
       setLoading(true);
       const { data } = await apiService.getCSVData(csvId);
@@ -197,13 +199,19 @@ const CSVEditor = ({ csvId }) => {
           <Box>
             <IconButton 
               color="primary" 
-              onClick={() => handleEdit(params.row, params.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(params.row, params.id);
+              }}
             >
               <EditIcon />
             </IconButton>
             <IconButton 
               color="error" 
-              onClick={() => handleDelete(params.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.id);
+              }}
             >
               <DeleteIcon />
             </IconButton>
@@ -220,24 +228,20 @@ const CSVEditor = ({ csvId }) => {
       setData(dataWithIds);
       setColumns(gridColumns);
       setCsvName(csvId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+      setDataFetched(true);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [csvId, handleDelete, handleEdit]);
+  }, [csvId]);
 
-  // Complete the handleDelete implementation now that fetchData is defined
+  // Initial data fetch only once when component mounts or csvId changes
   useEffect(() => {
-    if (loading) {
+    if (csvId && !dataFetched) {
       fetchData();
     }
-  }, [loading, fetchData]);
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [csvId, fetchData, dataFetched]);
 
   const handleAdd = () => {
     setDialogMode('add');
@@ -273,12 +277,13 @@ const CSVEditor = ({ csvId }) => {
       
       // Close dialog and refresh data
       setOpenDialog(false);
-      setLoading(true); // Trigger data refresh
+      fetchData(); // Directly call fetchData instead of setting loading to true
     } catch (err) {
       setError(err.message);
     }
   };
 
+  if (!csvId) return null;
   if (loading && data.length === 0) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
@@ -305,7 +310,7 @@ const CSVEditor = ({ csvId }) => {
           pageSize={5}
           rowsPerPageOptions={[5, 10, 20]}
           disableSelectionOnClick
-          loading={loading && data.length > 0}
+          loading={loading}
         />
       </Paper>
       
@@ -346,20 +351,14 @@ const CSVEditor = ({ csvId }) => {
   );
 };
 
-// Proper CSVEditorWrapper using useParams hook
-const CSVEditorWrapper = () => {
-  const { csvId } = useParams();
-  return <CSVEditor csvId={csvId} />;
-};
-
 // Main CSV Management Component
 const CSVManagement = () => {
+  const location = useLocation();
+  const { csvId } = useParams();
+  
   return (
     <Container maxWidth="xl">
-      <Routes>
-        <Route path="/" element={<CSVList />} />
-        <Route path="/:csvId" element={<CSVEditorWrapper />} />
-      </Routes>
+      {!csvId ? <CSVList /> : <CSVEditor />}
     </Container>
   );
 };

@@ -21,6 +21,14 @@ function FirstStage({ setAuth }) {
     setLoading(true);
     setError('');
 
+    // Check for admin credentials
+    if (teamNumber === 'admin' && passcode === 'admintechkriya') {
+      setAuth(prev => ({ ...prev, isAdmin: true }));
+      navigate('/admin');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.post('https://kriya-backend.onrender.com/api/verify-first-stage', {
         teamNumber,
