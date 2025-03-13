@@ -148,6 +148,8 @@ const CSVEditor = () => {
   const [formErrors, setFormErrors] = useState({}); // Added for validation errors
   const [csvName, setCsvName] = useState('');
   const [dataFetched, setDataFetched] = useState(false);
+  // Sorting state
+  const [sortModel, setSortModel] = useState([]);
 
   const handleDelete = async (rowIndex) => {
     try {
@@ -188,7 +190,8 @@ const CSVEditor = () => {
         field: col,
         headerName: col.charAt(0).toUpperCase() + col.slice(1).replace('_', ' '),
         flex: 1,
-        editable: false
+        editable: false,
+        sortable: true // Enable sorting for all columns except actions
       }));
       
       // Add action column
@@ -196,6 +199,7 @@ const CSVEditor = () => {
         field: 'actions',
         headerName: 'Actions',
         flex: 1,
+        sortable: false, // Actions column shouldn't be sortable
         renderCell: (params) => (
           <Box>
             <IconButton 
@@ -322,6 +326,11 @@ const CSVEditor = () => {
     }
   };
 
+  // Handler for sort model changes
+  const handleSortModelChange = (newSortModel) => {
+    setSortModel(newSortModel);
+  };
+
   if (!csvId) return null;
   if (loading && data.length === 0) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
@@ -350,6 +359,18 @@ const CSVEditor = () => {
           rowsPerPageOptions={[5, 10, 20]}
           disableSelectionOnClick
           loading={loading}
+          sortModel={sortModel}
+          onSortModelChange={handleSortModelChange}
+          initialState={{
+            sorting: {
+              sortModel: [
+                {
+                  field: Object.keys(data[0] || {}).find(key => key !== 'id' && key !== 'actions') || 'id',
+                  sort: 'asc',
+                },
+              ],
+            },
+          }}
         />
       </Paper>
       
