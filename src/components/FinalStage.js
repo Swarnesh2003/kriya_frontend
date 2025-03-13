@@ -31,7 +31,6 @@ function FinalStage() {
           
           <Typography variant="body1" sx={{ mb: 4, textAlign: 'center' }}>
             Congratulations! You've successfully navigated through all the challenges.
-            Here is your final clue:
           </Typography>
           
           <Box 
@@ -58,7 +57,7 @@ function FinalStage() {
                 }
               }}
             >
-              Click Here To Claim Your Prize
+              Click to unlock next round
             </Link>
           </Box>
           

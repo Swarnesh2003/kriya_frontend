@@ -96,7 +96,7 @@ function FirstStage({ setAuth }) {
               margin="normal"
               required
               fullWidth
-              name="passcode"
+              name="5 digit passcode"
               label="Passcode"
               type="text"
               id="passcode"
