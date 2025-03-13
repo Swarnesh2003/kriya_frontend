@@ -67,6 +67,8 @@ function SecondStage({ setAuth }) {
           
           <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
             You've unveiled the first layer of the mystery, but secrets still remain...
+            
+            Another locked door stands in your way, requiring a passcode in the format "x1y2", where x1 represents the previous state and y2 is the move needed to crack the puzzle.
           </Typography>
           
           <Box 
