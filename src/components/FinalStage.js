@@ -44,7 +44,7 @@ function FinalStage() {
             }}
           >
             <Link
-              href="https://drive.google.com/drive/folders/1p7Y2c8KGaQqayeqEI1Cr6h4yu0ILbCvM"
+              href=""
               target="_blank"
               rel="noopener"
               sx={{ 
@@ -57,7 +57,7 @@ function FinalStage() {
                 }
               }}
             >
-              Click to unlock next round
+              Get your second round details from volunteers by showing this screen.
             </Link>
           </Box>
           
