@@ -80,7 +80,7 @@ function SecondStage({ setAuth }) {
               boxShadow: '0 0 10px rgba(245, 0, 87, 0.5)'
             }}
             alt="Mystery Image"
-            src="/mystery-img.jpg"
+            src="/mystery-image.jpg"
           />
           
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 2 }}>
